@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Container, TextField, Button, List, ListItem, ListItemText, IconButton, Typography, Box, Paper, Grid } from '@mui/material';
+import { Edit, Delete } from '@mui/icons-material';
+import './App.css';
+
+const API_URL = 'http://localhost:5000/users';
 
 function App() {
   const [users, setUsers] = useState([]);
@@ -10,105 +15,125 @@ function App() {
   const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/users')
-      .then(response => setUsers(response.data))
-      .catch(error => console.error('Error fetching users:', error));
+    fetchUsers();
   }, []);
 
-  const addUser = () => {
-    axios.post('http://localhost:5000/users', { name, email, age, address })
-      .then(response => {
-        setUsers([...users, response.data]);
-        setName('');
-        setEmail('');
-        setAge('');
-        setAddress('');
-      })
-      .catch(error => console.error('Error adding user:', error));
+  const fetchUsers = () => {
+    axios.get(API_URL)
+      .then(response => setUsers(response.data))
+      .catch(error => console.error('Error fetching data:', error));
   };
 
-  const updateUser = (id) => {
-    axios.put(`http://localhost:5000/users/${id}`, { name, email, age, address })
-      .then(response => {
-        setUsers(users.map(user => (user.id === id ? response.data : user)));
-        setEditingUser(null);
-        setName('');
-        setEmail('');
-        setAge('');
-        setAddress('');
-      })
-      .catch(error => console.error('Error updating user:', error));
-  };
-
-  const deleteUser = (id) => {
-    axios.delete(`http://localhost:5000/users/${id}`)
-      .then(response => {
-        setUsers(users.filter(user => user.id !== id));
-      })
-      .catch(error => console.error('Error deleting user:', error));
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handleAddOrUpdateUser = () => {
     if (editingUser) {
-      updateUser(editingUser.id);
+      axios.put(`${API_URL}/${editingUser.id}`, { name, email, age, address })
+        .then(() => {
+          fetchUsers();
+          setEditingUser(null);
+          clearForm();
+        });
     } else {
-      addUser();
+      axios.post(API_URL, { name, email, age, address })
+        .then(() => {
+          fetchUsers();
+          clearForm();
+        });
     }
   };
 
-  const handleEdit = (user) => {
-    setEditingUser(user);
+  const handleEditUser = (user) => {
     setName(user.name);
     setEmail(user.email);
     setAge(user.age);
     setAddress(user.address);
+    setEditingUser(user);
+  };
+
+  const handleDeleteUser = (id) => {
+    axios.delete(`${API_URL}/${id}`)
+      .then(() => fetchUsers());
+  };
+
+  const clearForm = () => {
+    setName('');
+    setEmail('');
+    setAge('');
+    setAddress('');
   };
 
   return (
-    <div className="App">
-      <h1>CRUD de Usuários</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Nome"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="number"
-          placeholder="Idade"
-          value={age}
-          onChange={(e) => setAge(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Endereço"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          required
-        />
-        <button type="submit">{editingUser ? 'Atualizar' : 'Adicionar'}</button>
-      </form>
-      <ul>
-        {users.map(user => (
-          <li key={user.id}>
-            {user.name} ({user.email}), Idade: {user.age}, Endereço: {user.address}
-            <button onClick={() => handleEdit(user)}>Editar</button>
-            <button onClick={() => deleteUser(user.id)}>Deletar</button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Container maxWidth="md" className="App">
+      <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
+        <Typography variant="h4" align="center" gutterBottom>Cadastro de Usuários</Typography>
+        <Box component="form" noValidate autoComplete="off">
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                label="Name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                margin="normal"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                label="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                margin="normal"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                label="Age"
+                value={age}
+                onChange={e => setAge(e.target.value)}
+                margin="normal"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                label="Address"
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                margin="normal"
+                fullWidth
+              />
+            </Grid>
+          </Grid>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddOrUpdateUser}
+            style={{ marginTop: '10px' }}
+          >
+            {editingUser ? "Update" : "Add"}
+          </Button>
+        </Box>
+        <Typography variant="h4" align="center" gutterBottom style={{ marginTop: '20px' }}>
+          Lista de Usuários Cadastrados
+        </Typography>
+        <List>
+          {users.map(user => (
+            <ListItem key={user.id} style={{ borderBottom: '1px solid #ccc' }}>
+              <ListItemText
+                primary={user.name}
+                secondary={`${user.email}, ${user.age}, ${user.address}`}
+              />
+              <IconButton edge="end" aria-label="edit" onClick={() => handleEditUser(user)}>
+                <Edit />
+              </IconButton>
+              <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteUser(user.id)}>
+                <Delete />
+              </IconButton>
+            </ListItem>
+          ))}
+        </List>
+      </Paper>
+    </Container>
   );
 }
 
