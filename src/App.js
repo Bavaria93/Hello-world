@@ -142,27 +142,29 @@ function App() {
         <Typography variant="h4" align="center" gutterBottom style={{ marginTop: '20px' }}>
           Lista de Usuários Cadastrados
         </Typography>
-        <Grid container direction="column" spacing={2}>
+        <Grid container direction="column" spacing={2} className="user-list">
           {users.map(user => (
-            <Grid item xs={12} key={user.id}>
-              <Box width="100%">
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6">{user.name}</Typography>
-                    <Typography color="textSecondary">{user.email}</Typography>
-                    <Typography color="textSecondary">Idade: {user.age}</Typography>
-                    <Typography color="textSecondary">Endereço: {user.address}</Typography>
-                  </CardContent>
-                  <CardActions>
-                    <IconButton edge="start" aria-label="editar" onClick={() => handleEditUser(user)}>
-                      <Edit />
-                    </IconButton>
-                    <IconButton edge="end" aria-label="deletar" onClick={() => handleDeleteUser(user.id)}>
-                      <Delete />
-                    </IconButton>
-                  </CardActions>
-                </Card>
-              </Box>
+            <Grid item xs={12} key={user.id} className="user-card-grid">
+              <Card className="user-card">
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box>
+                      <Typography variant="h6">{user.name}</Typography>
+                      <Typography color="textSecondary">{user.email}</Typography>
+                      <Typography color="textSecondary">Idade: {user.age}</Typography>
+                      <Typography color="textSecondary">Endereço: {user.address}</Typography>
+                    </Box>
+                    <Box>
+                      <IconButton edge="end" aria-label="editar" onClick={() => handleEditUser(user)}>
+                        <Edit />
+                      </IconButton>
+                      <IconButton edge="end" aria-label="deletar" onClick={() => handleDeleteUser(user.id)}>
+                        <Delete />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
           ))}
         </Grid>
