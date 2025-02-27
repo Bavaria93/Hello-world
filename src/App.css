@@ -13,3 +13,23 @@
   margin-top: 20px;
   width: 100%;
 }
+
+.user-list {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.user-card-grid {
+  width: 100%;
+}
+
+.user-card {
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.user-card .MuiCardContent-root {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
