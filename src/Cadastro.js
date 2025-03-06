@@ -1,108 +1,108 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Container, TextField, Button, Grid, Typography, Box, Paper } from '@mui/material';
+import { Container, TextField, Button, Box, Typography, IconButton } from '@mui/material';
+import { Add, Remove } from '@mui/icons-material';
 
 const API_URL = 'http://localhost:5000/users';
 
 function Cadastro() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [age, setAge] = useState('');
-  const [address, setAddress] = useState('');
-  const [errors, setErrors] = useState({});
+  const [user, setUser] = useState({
+    name: '',
+    email: '',
+    age: '',
+    addresses: [''],
+  });
 
-  const validate = () => {
-    let tempErrors = {};
-    tempErrors.name = name ? (/^[A-Za-z\s]+$/.test(name) ? "" : "Nome não pode incluir números") : "Nome é obrigatório";
-    tempErrors.email = email ? (/.+@.+\..+/.test(email) ? "" : "Email inválido") : "Email é obrigatório";
-    tempErrors.age = age ? (/^\d+$/.test(age) ? "" : "Idade deve incluir apenas números") : "Idade é obrigatória";
-    tempErrors.address = address ? "" : "Endereço é obrigatório";
-    setErrors(tempErrors);
-    return Object.values(tempErrors).every(x => x === "");
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUser({ ...user, [name]: value });
   };
 
-  const handleAddUser = () => {
-    if (!validate()) return;
+  const handleAddressChange = (index, value) => {
+    const newAddresses = user.addresses.map((address, i) => (i === index ? value : address));
+    setUser({ ...user, addresses: newAddresses });
+  };
 
-    axios.post(API_URL, { name, email, age, address })
+  const addAddressField = () => {
+    setUser({ ...user, addresses: [...user.addresses, ''] });
+  };
+
+  const removeAddressField = (index) => {
+    const newAddresses = user.addresses.filter((_, i) => i !== index);
+    setUser({ ...user, addresses: newAddresses });
+  };
+
+  const handleAddUser = (e) => {
+    e.preventDefault();
+    axios
+      .post(API_URL, user)
       .then(() => {
-        clearForm();
+        setUser({ name: '', email: '', age: '', addresses: [''] });
+      })
+      .catch((error) => {
+        console.error('Erro ao cadastrar usuário:', error);
       });
   };
 
-  const clearForm = () => {
-    setName('');
-    setEmail('');
-    setAge('');
-    setAddress('');
-    setErrors({});
-  };
-
   return (
-    <Container maxWidth="md">
-      <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
-        <Typography variant="h4" align="center" gutterBottom>Cadastro de Usuários</Typography>
-        <Box component="form" noValidate autoComplete="off">
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Nome"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                margin="normal"
-                fullWidth
-                error={!!errors.name}
-                helperText={errors.name}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                margin="normal"
-                fullWidth
-                error={!!errors.email}
-                helperText={errors.email}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Idade"
-                value={age}
-                onChange={e => setAge(e.target.value)}
-                margin="normal"
-                fullWidth
-                error={!!errors.age}
-                helperText={errors.age}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Endereço"
-                value={address}
-                onChange={e => setAddress(e.target.value)}
-                margin="normal"
-                fullWidth
-                error={!!errors.address}
-                helperText={errors.address}
-                required
-              />
-            </Grid>
-          </Grid>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleAddUser}
-            style={{ marginTop: '10px' }}
-          >
-            Adicionar
+    <Container maxWidth="sm" style={{ backgroundColor: '#f8f9fa', borderRadius: '5px', padding: '20px', marginTop: '20px' }}>
+      <Typography variant="h6" align="center" gutterBottom>
+        Cadastro de Usuários
+      </Typography>
+      <Box
+        component="form"
+        onSubmit={handleAddUser}
+        style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}
+      >
+        <TextField
+          label="Nome"
+          name="name"
+          value={user.name}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Email"
+          name="email"
+          value={user.email}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Idade"
+          name="age"
+          value={user.age}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+        />
+        {user.addresses.map((address, index) => (
+          <Box key={index} display="flex" alignItems="center">
+            <TextField
+              label={`Endereço ${index + 1}`}
+              value={address}
+              onChange={(e) => handleAddressChange(index, e.target.value)}
+              fullWidth
+              margin="normal"
+            />
+            <IconButton onClick={() => removeAddressField(index)} aria-label="remover endereço">
+              <Remove />
+            </IconButton>
+          </Box>
+        ))}
+        <Box display="flex" justifyContent="center" marginBottom="10px">
+          <Button onClick={addAddressField} variant="outlined" color="primary" startIcon={<Add />}>
+            Adicionar Endereço
           </Button>
         </Box>
-      </Paper>
+        <Box display="flex" justifyContent="center" marginTop="10px">
+          <Button type="submit" variant="contained" color="primary">
+            Cadastrar
+          </Button>
+        </Box>
+      </Box>
     </Container>
   );
 }
