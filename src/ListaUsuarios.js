@@ -1,153 +1,217 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Card, CardContent, Grid, Typography, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
+import {
+  Container,
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  IconButton,
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+} from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 
 const API_URL = 'http://localhost:5000/users';
 
 function ListaUsuarios() {
   const [users, setUsers] = useState([]);
-  const [dialogOpen, setDialogOpen] = useState(false); // Controle do estado do diálogo de exclusão
-  const [editingUser, setEditingUser] = useState(null); // Controle do estado do diálogo de edição
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null); // Dados do usuário selecionado
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = () => {
-    axios
-      .get(API_URL)
-      .then((response) => setUsers(response.data))
-      .catch((error) => console.error('Erro ao buscar usuários:', error));
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(API_URL);
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
+    }
   };
 
   const handleOpenEditDialog = (user) => {
-    console.log('Abrindo diálogo de edição para o usuário:', user);
-    setEditingUser(user); // Define o usuário para edição
+    setSelectedUser(user); // Define o usuário para edição
+    setEditDialogOpen(true); // Abre a janela de edição
   };
 
   const handleCloseEditDialog = () => {
-    console.log('Fechando diálogo de edição');
-    setEditingUser(null); // Reseta o estado de edição
+    setSelectedUser(null); // Reseta o usuário selecionado
+    setEditDialogOpen(false); // Fecha a janela de edição
   };
 
-  const handleUpdateUser = () => {
-    console.log('Atualizando usuário:', editingUser);
-    axios
-      .put(`${API_URL}/${editingUser.id}`, editingUser)
-      .then(() => {
+  const handleUpdateUser = async () => {
+    if (selectedUser) {
+      try {
+        await axios.put(`${API_URL}/${selectedUser.id}`, selectedUser);
         fetchUsers(); // Atualiza a lista de usuários
         handleCloseEditDialog(); // Fecha o diálogo de edição
-      })
-      .catch((error) => {
-        console.error('Erro ao atualizar o usuário:', error);
-      });
+      } catch (error) {
+        console.error('Erro ao atualizar usuário:', error);
+      }
+    }
   };
 
   const handleOpenDeleteDialog = (user) => {
-    console.log('Abrindo diálogo de exclusão para o usuário:', user);
-    setDialogOpen(true); // Abre o diálogo de exclusão
-    setEditingUser(user); // Define o usuário para exclusão
+    setSelectedUser(user); // Define o usuário para exclusão
+    setDeleteDialogOpen(true); // Abre a janela de exclusão
   };
 
   const handleCloseDeleteDialog = () => {
-    console.log('Fechando diálogo de exclusão');
-    setDialogOpen(false); // Fecha o diálogo de exclusão
-    setEditingUser(null); // Reseta o estado de exclusão
+    setSelectedUser(null); // Reseta o usuário selecionado
+    setDeleteDialogOpen(false); // Fecha a janela de exclusão
   };
 
-  const handleDeleteUser = () => {
-    console.log('Excluindo usuário:', editingUser);
-    axios
-      .delete(`${API_URL}/${editingUser.id}`)
-      .then(() => {
+  const handleDeleteUser = async () => {
+    if (selectedUser) {
+      try {
+        await axios.delete(`${API_URL}/${selectedUser.id}`);
         fetchUsers(); // Atualiza a lista de usuários
-        handleCloseDeleteDialog(); // Fecha o diálogo de exclusão
-      })
-      .catch((error) => {
-        console.error('Erro ao excluir o usuário:', error);
-      });
+        handleCloseDeleteDialog(); // Fecha o diálogo
+      } catch (error) {
+        console.error('Erro ao excluir usuário:', error);
+      }
+    }
   };
 
   return (
-    <Container maxWidth="md" style={{ backgroundColor: '#d1e7dd', padding: '20px' }}>
-      <Grid container direction="column" spacing={2} alignItems="center" style={{ backgroundColor: '#cff4fc', padding: '10px' }}>
+    <Container maxWidth="md" style={{ padding: '20px' }}>
+      <Grid container spacing={3} justifyContent="center">
         {users.map((user) => (
-          <Grid
-            item
-            key={user.id}
-            style={{
-              backgroundColor: '#fefefe',
-              padding: '10px',
-              border: '1px solid #dee2e6',
-              display: 'flex',
-              justifyContent: 'center',
-            }}
-          >
+          <Grid item key={user.id} xs={12} sm={6} md={4}>
             <Card
               style={{
-                width: '300px',
+                width: '100%',
+                maxWidth: '300px',
                 height: '300px',
-                backgroundColor: '#f8f9fa',
                 position: 'relative',
                 display: 'flex',
-                flexDirection: 'row',
+                flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
+                backgroundColor: '#f8f9fa', // Cor de fundo para o card
+                border: '1px solid #dee2e6',
+                borderRadius: '10px',
               }}
             >
               <Box
                 position="absolute"
                 top="10px"
                 right="10px"
-                style={{ backgroundColor: '#f1f3f5', borderRadius: '5px' }}
+                display="flex"
+                gap="10px"
               >
-                <IconButton edge="end" aria-label="editar" onClick={() => handleOpenEditDialog(user)}>
+                {/* Botão de Edição */}
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEditDialog(user);
+                  }}
+                  style={{
+                    backgroundColor: '#4caf50', // Fundo verde para o botão de edição
+                    color: '#fff',
+                    borderRadius: '50%',
+                  }}
+                >
                   <Edit />
                 </IconButton>
-                <IconButton edge="end" aria-label="deletar" onClick={() => handleOpenDeleteDialog(user)}>
+                {/* Botão de Exclusão */}
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenDeleteDialog(user);
+                  }}
+                  style={{
+                    backgroundColor: '#f44336', // Fundo vermelho para o botão de exclusão
+                    color: '#fff',
+                    borderRadius: '50%',
+                  }}
+                >
                   <Delete />
                 </IconButton>
               </Box>
               <CardContent
                 style={{
-                  flexGrow: 1,
                   display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start', // Alinha os itens à esquerda
+                  textAlign: 'left', // Garante alinhamento à esquerda
+                  padding: '10px', // Padding geral para todo o conteúdo
+                  backgroundColor: '#e2e3e5', // Fundo cinza claro
+                  borderRadius: '5px',
                   width: '100%',
-                  padding: '10px',
+                  height: 'auto',
                 }}
               >
-                <Box
-                  display="flex"
-                  flexDirection="column"
-                  alignItems="flex-start" // Alinha os itens à esquerda
+                {/* Dados do Usuário */}
+                <Typography
+                  variant="h5"
                   style={{
-                    backgroundColor: '#e2e3e5',
-                    borderRadius: '5px',
-                    padding: '10px',
-                    textAlign: 'left', // Alinha o texto à esquerda
-                    width: '100%',
+                    fontWeight: 'bold',
+                    marginBottom: '10px',
+                    color: '#212529',
+                    paddingInline: '20px', // Padding horizontal para o nome
                   }}
                 >
-                  <Typography variant="h6">{user.name}</Typography>
-                  <Typography color="textSecondary">{user.email}</Typography>
-                  <Typography color="textSecondary">Idade: {user.age}</Typography>
-                  <Typography color="textSecondary">Endereço: {user.address}</Typography>
-                </Box>
+                  {user.name}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  color="textSecondary"
+                  style={{
+                    marginBottom: '5px',
+                    color: '#495057',
+                    paddingInline: '20px', // Padding horizontal para o email
+                  }}
+                >
+                  {user.email}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  color="textSecondary"
+                  style={{
+                    marginBottom: '5px',
+                    color: '#495057',
+                    paddingInline: '20px', // Padding horizontal para a idade
+                  }}
+                >
+                  Idade: {user.age}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  color="textSecondary"
+                  style={{
+                    color: '#495057',
+                    paddingInline: '20px', // Padding horizontal para o endereço
+                  }}
+                >
+                  Endereço: {user.address}
+                </Typography>
               </CardContent>
             </Card>
-
           </Grid>
         ))}
       </Grid>
-
-      {/* Janela de Exclusão */}
-      <Dialog open={dialogOpen} onClose={handleCloseDeleteDialog}>
-        <DialogTitle>Confirmar Exclusão</DialogTitle>
+      {/* Diálogo de Exclusão */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        aria-labelledby="delete-dialog-title"
+      >
+        <DialogTitle id="delete-dialog-title">Confirmar Exclusão</DialogTitle>
         <DialogContent>
-          <Typography>Tem certeza que deseja excluir o usuário "{editingUser?.name}"?</Typography>
+          <Typography>
+            Tem certeza de que deseja excluir o usuário{' '}
+            <strong>{selectedUser?.name}</strong>?
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteDialog} color="primary">
@@ -158,38 +222,49 @@ function ListaUsuarios() {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Janela de Edição */}
-      <Dialog open={Boolean(editingUser)} onClose={handleCloseEditDialog}>
-        <DialogTitle>Editar Usuário</DialogTitle>
+      {/* Diálogo de Edição */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={handleCloseEditDialog}
+        aria-labelledby="edit-dialog-title"
+      >
+        <DialogTitle id="edit-dialog-title">Editar Usuário</DialogTitle>
         <DialogContent>
           <TextField
+            margin="normal"
             label="Nome"
             fullWidth
-            margin="normal"
-            value={editingUser?.name || ''}
-            onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+            value={selectedUser?.name || ''}
+            onChange={(e) =>
+              setSelectedUser({ ...selectedUser, name: e.target.value })
+            }
           />
           <TextField
+            margin="normal"
             label="Email"
             fullWidth
-            margin="normal"
-            value={editingUser?.email || ''}
-            onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+            value={selectedUser?.email || ''}
+            onChange={(e) =>
+              setSelectedUser({ ...selectedUser, email: e.target.value })
+            }
           />
           <TextField
+            margin="normal"
             label="Idade"
             fullWidth
-            margin="normal"
-            value={editingUser?.age || ''}
-            onChange={(e) => setEditingUser({ ...editingUser, age: e.target.value })}
+            value={selectedUser?.age || ''}
+            onChange={(e) =>
+              setSelectedUser({ ...selectedUser, age: e.target.value })
+            }
           />
           <TextField
+            margin="normal"
             label="Endereço"
             fullWidth
-            margin="normal"
-            value={editingUser?.address || ''}
-            onChange={(e) => setEditingUser({ ...editingUser, address: e.target.value })}
+            value={selectedUser?.address || ''}
+            onChange={(e) =>
+              setSelectedUser({ ...selectedUser, address: e.target.value })
+            }
           />
         </DialogContent>
         <DialogActions>
