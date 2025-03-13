@@ -17,7 +17,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), nullable=False)
-    cpf = db.Column(db.String(14), unique=True, nullable=False)  # Campo CPF adicionado
+    cpf = db.Column(db.String(14), unique=True, nullable=False)
+    phone = db.Column(db.String(15), nullable=False)  # Novo campo de telefone
     age = db.Column(db.Integer, nullable=False)
 
 class Address(db.Model):
@@ -36,21 +37,21 @@ class Address(db.Model):
 def add_user():
     data = request.get_json()
 
-    # Validação dos campos obrigatórios
-    if 'name' not in data or 'email' not in data or 'cpf' not in data or 'age' not in data or 'addresses' not in data:
+    if 'name' not in data or 'email' not in data or 'cpf' not in data or 'phone' not in data or 'age' not in data or 'addresses' not in data:
         return jsonify({'message': 'Todos os campos são obrigatórios'}), 400
 
-    # Validação simples de CPF (pode ser expandida com bibliotecas especializadas)
+    # Validação simples de CPF e Telefone
     if not len(data['cpf']) == 14 or not all(c.isdigit() or c == '.' or c == '-' for c in data['cpf']):
         return jsonify({'message': 'CPF inválido'}), 400
 
+    if not len(data['phone']) <= 15:
+        return jsonify({'message': 'Telefone inválido'}), 400
+
     try:
-        # Criar novo usuário
-        new_user = User(name=data['name'], email=data['email'], cpf=data['cpf'], age=data['age'])
+        new_user = User(name=data['name'], email=data['email'], cpf=data['cpf'], phone=data['phone'], age=data['age'])
         db.session.add(new_user)
         db.session.commit()
 
-        # Adicionar endereços
         for addr in data['addresses']:
             if not all(k in addr for k in ('cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado')):
                 return jsonify({'message': 'Dados de endereço incompletos'}), 400
