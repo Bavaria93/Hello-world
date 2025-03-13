@@ -1,20 +1,65 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Container, TextField, Button, Box, Typography, IconButton } from '@mui/material';
-import { Add, Remove } from '@mui/icons-material';
+import { Remove } from '@mui/icons-material';
 
 const API_URL = 'http://localhost:5000/users';
 
 function Cadastro() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
   const [age, setAge] = useState('');
-  const [addresses, setAddresses] = useState([{ logradouro: '', bairro: '', cidade: '', estado: '' }]);
+  const [currentAddress, setCurrentAddress] = useState({
+    cep: '',
+    logradouro: '',
+    numero: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+  });
+  const [addresses, setAddresses] = useState([]);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const validate = () => {
+  // Função para formatar o CPF enquanto o usuário digita
+  const formatCpf = (value) => {
+    // Remove caracteres não numéricos
+    value = value.replace(/\D/g, '');
+
+    // Limita o número de caracteres a 11 (formato CPF sem pontuação)
+    value = value.substring(0, 11);
+
+    // Aplica a máscara do CPF: xxx.xxx.xxx-xx
+    if (value.length > 9) {
+      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    } else if (value.length > 6) {
+      value = value.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+    } else if (value.length > 3) {
+      value = value.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+    }
+
+    return value;
+  };
+
+  // Função para formatar o CEP enquanto o usuário digita
+  const formatCep = (value) => {
+    // Remove caracteres não numéricos
+    value = value.replace(/\D/g, '');
+
+    // Limita o número de caracteres a 8 (formato CEP sem pontuação)
+    value = value.substring(0, 8);
+
+    // Aplica a máscara do CEP: xxxxx-xxx
+    if (value.length > 5) {
+      value = value.replace(/(\d{5})(\d{1,3})/, '$1-$2');
+    }
+
+    return value;
+  };
+
+  const validateUserFields = () => {
     let tempErrors = {};
 
     // Validação do Nome
@@ -27,18 +72,35 @@ function Cadastro() {
       ? (/.+@.+\..+/.test(email) ? '' : 'Email inválido')
       : 'Email é obrigatório';
 
+    // Validação do CPF
+    tempErrors.cpf = cpf
+      ? (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf) ? '' : 'CPF inválido. Use o formato xxx.xxx.xxx-xx')
+      : 'CPF é obrigatório';
+
     // Validação da Idade
     tempErrors.age = age
       ? (/^\d+$/.test(age) ? '' : 'Idade deve incluir apenas números')
       : 'Idade é obrigatória';
 
-    // Validação dos Endereços
-    addresses.forEach((address, index) => {
-      if (!address.logradouro.trim()) tempErrors[`logradouro_${index}`] = 'O logradouro é obrigatório.';
-      if (!address.bairro.trim()) tempErrors[`bairro_${index}`] = 'O bairro é obrigatório.';
-      if (!address.cidade.trim()) tempErrors[`cidade_${index}`] = 'A cidade é obrigatória.';
-      if (!address.estado.trim()) tempErrors[`estado_${index}`] = 'O estado é obrigatório.';
-    });
+    // Validação Condicional de Endereços
+    if (addresses.length === 0) {
+      tempErrors.addresses = 'É necessário adicionar pelo menos um endereço.';
+    }
+
+    setErrors(tempErrors);
+    return Object.values(tempErrors).every((x) => x === '');
+  };
+
+  const validateAddressFields = () => {
+    let tempErrors = {};
+
+    // Validação dos Campos de Endereço
+    if (!currentAddress.cep.trim()) tempErrors.cep = 'O CEP é obrigatório.';
+    if (!currentAddress.logradouro.trim()) tempErrors.logradouro = 'O logradouro é obrigatório.';
+    if (!currentAddress.numero.trim()) tempErrors.numero = 'O número é obrigatório.';
+    if (!currentAddress.bairro.trim()) tempErrors.bairro = 'O bairro é obrigatório.';
+    if (!currentAddress.cidade.trim()) tempErrors.cidade = 'A cidade é obrigatória.';
+    if (!currentAddress.estado.trim()) tempErrors.estado = 'O estado é obrigatório.';
 
     setErrors(tempErrors);
     return Object.values(tempErrors).every((x) => x === '');
@@ -46,10 +108,10 @@ function Cadastro() {
 
   const handleAddUser = (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validateUserFields()) return;
 
     axios
-      .post(API_URL, { name, email, age, addresses })
+      .post(API_URL, { name, email, cpf, age, addresses })
       .then(() => {
         setSuccessMessage('Usuário cadastrado com sucesso!');
         setErrorMessage('');
@@ -63,28 +125,49 @@ function Cadastro() {
       });
   };
 
+  // Função para capturar mudanças nos campos do endereço (atualiza dinamicamente o estado `currentAddress`)
+  const handleAddressChange = (field, value) => {
+    setCurrentAddress({
+      ...currentAddress, // Mantém os outros valores existentes
+      [field]: value,    // Atualiza apenas o campo correspondente
+    });
+  };
+
+  // Função para adicionar o endereço à lista de endereços (estado `addresses`)
+  const handleAddAddress = () => {
+    if (!validateAddressFields()) return;
+
+    setAddresses([...addresses, currentAddress]); // Adiciona o endereço ao array
+    setCurrentAddress({
+      cep: '',
+      logradouro: '',
+      numero: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
+    }); // Reseta os campos após adicionar
+  };
+  
+  const handleRemoveAddress = (index) => {
+    const updatedAddresses = addresses.filter((_, i) => i !== index);
+    setAddresses(updatedAddresses);
+  };
+
   const clearForm = () => {
     setName('');
     setEmail('');
+    setCpf('');
     setAge('');
-    setAddresses([{ logradouro: '', bairro: '', cidade: '', estado: '' }]);
+    setAddresses([]);
+    setCurrentAddress({
+      cep: '',
+      logradouro: '',
+      numero: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
+    });
     setErrors({});
-  };
-
-  const handleAddressChange = (index, key, value) => {
-    const updatedAddresses = addresses.map((address, i) =>
-      i === index ? { ...address, [key]: value } : address
-    );
-    setAddresses(updatedAddresses);
-  };
-
-  const addAddressField = () => {
-    setAddresses([...addresses, { logradouro: '', bairro: '', cidade: '', estado: '' }]);
-  };
-
-  const removeAddressField = (index) => {
-    const updatedAddresses = addresses.filter((_, i) => i !== index);
-    setAddresses(updatedAddresses);
   };
 
   return (
@@ -106,7 +189,6 @@ function Cadastro() {
             margin="normal"
             error={!!errors.name}
             helperText={errors.name}
-            required
           />
           <TextField
             label="Email"
@@ -116,7 +198,15 @@ function Cadastro() {
             margin="normal"
             error={!!errors.email}
             helperText={errors.email}
-            required
+          />
+          <TextField
+            label="CPF"
+            value={cpf}
+            onChange={(e) => setCpf(formatCpf(e.target.value))}
+            fullWidth
+            margin="normal"
+            error={!!errors.cpf}
+            helperText={errors.cpf}
           />
           <TextField
             label="Idade"
@@ -126,67 +216,95 @@ function Cadastro() {
             margin="normal"
             error={!!errors.age}
             helperText={errors.age}
-            required
           />
         </Box>
+
+        {/* Formulário de Endereço */}
         <Box style={{ backgroundColor: '#e0f7fa', padding: '20px', borderRadius: '8px' }}>
-          <Typography variant="h6" gutterBottom>Endereços</Typography>
-          {addresses.map((address, index) => (
-            <React.Fragment key={index}>
-              <TextField
-                label="Logradouro"
-                value={address.logradouro}
-                onChange={(e) => handleAddressChange(index, 'logradouro', e.target.value)}
-                fullWidth
-                margin="normal"
-                error={!!errors[`logradouro_${index}`]}
-                helperText={errors[`logradouro_${index}`]}
-                required
-              />
-              <TextField
-                label="Bairro"
-                value={address.bairro}
-                onChange={(e) => handleAddressChange(index, 'bairro', e.target.value)}
-                fullWidth
-                margin="normal"
-                error={!!errors[`bairro_${index}`]}
-                helperText={errors[`bairro_${index}`]}
-                required
-              />
-              <TextField
-                label="Cidade"
-                value={address.cidade}
-                onChange={(e) => handleAddressChange(index, 'cidade', e.target.value)}
-                fullWidth
-                margin="normal"
-                error={!!errors[`cidade_${index}`]}
-                helperText={errors[`cidade_${index}`]}
-                required
-              />
-              <TextField
-                label="Estado"
-                value={address.estado}
-                onChange={(e) => handleAddressChange(index, 'estado', e.target.value)}
-                fullWidth
-                margin="normal"
-                error={!!errors[`estado_${index}`]}
-                helperText={errors[`estado_${index}`]}
-                required
-              />
-              <IconButton onClick={() => removeAddressField(index)} aria-label="remover endereço">
-                <Remove />
-              </IconButton>
-            </React.Fragment>
-          ))}
-          <Box display="flex" justifyContent="center" marginBottom="10px">
-            <Button onClick={addAddressField} variant="outlined" color="primary" startIcon={<Add />}>
-              Adicionar Endereço
+          <Typography variant="h6" gutterBottom>Adicionar Endereço</Typography>
+          <TextField
+            label="CEP"
+            value={currentAddress.cep}
+            onChange={(e) => setCurrentAddress({ ...currentAddress, cep: formatCep(e.target.value) })}
+            fullWidth
+            margin="normal"
+            error={!!errors.cep}
+            helperText={errors.cep}
+          />
+          <TextField
+            label="Logradouro"
+            value={currentAddress.logradouro}
+            onChange={(e) => setCurrentAddress({ ...currentAddress, logradouro: e.target.value })}
+            fullWidth
+            margin="normal"
+            error={!!errors.logradouro}
+            helperText={errors.logradouro}
+          />
+          <TextField
+            label="Número"
+            value={currentAddress.numero}
+            onChange={(e) => setCurrentAddress({ ...currentAddress, numero: e.target.value })}
+            fullWidth
+            margin="normal"
+            error={!!errors.numero}
+            helperText={errors.numero}
+          />
+          <TextField
+            label="Bairro"
+            value={currentAddress.bairro}
+            onChange={(e) => setCurrentAddress({ ...currentAddress, bairro: e.target.value })}
+            fullWidth
+            margin="normal"
+            error={!!errors.bairro}
+            helperText={errors.bairro}
+          />
+          <TextField
+            label="Cidade"
+            value={currentAddress.cidade}
+            onChange={(e) => setCurrentAddress({ ...currentAddress, cidade: e.target.value })}
+            fullWidth
+            margin="normal"
+            error={!!errors.cidade}
+            helperText={errors.cidade}
+          />
+          <TextField
+            label="Estado"
+            value={currentAddress.estado}
+            onChange={(e) => setCurrentAddress({ ...currentAddress, estado: e.target.value })}
+            fullWidth
+            margin="normal"
+            error={!!errors.estado}
+            helperText={errors.estado}
+          />
+          <Box display="flex" justifyContent="center" marginTop="10px">
+            <Button onClick={handleAddAddress} variant="contained" color="secondary">
+              Salvar Endereço
             </Button>
           </Box>
         </Box>
+
+        {/* Lista de Endereços */}
+        <Box style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '8px' }}>
+          <Typography variant="h6" gutterBottom>Lista de Endereços</Typography>
+          {addresses.map((address, index) => (
+            <Box
+              key={index}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px solid #ddd', paddingBottom: '10px' }}
+            >
+              <Typography>
+                {address.cep}, {address.logradouro}, {address.numero}, {address.bairro}, {address.cidade}, {address.estado}
+              </Typography>
+              <IconButton onClick={() => handleRemoveAddress(index)} aria-label="remover endereço">
+                <Remove />
+              </IconButton>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Botão de Cadastro */}
         <Box display="flex" justifyContent="center" marginTop="10px">
           <Button type="submit" variant="contained" color="primary">
-            Cadastrar
+            Cadastrar Usuário
           </Button>
         </Box>
       </Box>
