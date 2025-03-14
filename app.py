@@ -18,18 +18,19 @@ class User(db.Model):
     name = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     cpf = db.Column(db.String(14), unique=True, nullable=False)
-    phone = db.Column(db.String(15), nullable=False)  # Novo campo de telefone
+    phone = db.Column(db.String(15), nullable=False)
     age = db.Column(db.Integer, nullable=False)
+    addresses_summary = db.Column(db.Text, nullable=True)  # Campo para armazenar dados de endereço consolidados
 
 class Address(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    cep = db.Column(db.String(20), nullable=False)  # Campo para CEP
     logradouro = db.Column(db.String(200), nullable=False)
-    numero = db.Column(db.String(10), nullable=False)  # Campo para Número
+    numero = db.Column(db.String(10), nullable=False)
     bairro = db.Column(db.String(100), nullable=False)
     cidade = db.Column(db.String(100), nullable=False)
     estado = db.Column(db.String(50), nullable=False)
+    cep = db.Column(db.String(20), nullable=False)
     user = db.relationship('User', backref=db.backref('addresses', lazy=True))
 
 # Rotas
@@ -37,21 +38,24 @@ class Address(db.Model):
 def add_user():
     data = request.get_json()
 
+    # Validação dos campos obrigatórios
     if 'name' not in data or 'email' not in data or 'cpf' not in data or 'phone' not in data or 'age' not in data or 'addresses' not in data:
         return jsonify({'message': 'Todos os campos são obrigatórios'}), 400
 
-    # Validação simples de CPF e Telefone
-    if not len(data['cpf']) == 14 or not all(c.isdigit() or c == '.' or c == '-' for c in data['cpf']):
-        return jsonify({'message': 'CPF inválido'}), 400
-
-    if not len(data['phone']) <= 15:
-        return jsonify({'message': 'Telefone inválido'}), 400
-
     try:
-        new_user = User(name=data['name'], email=data['email'], cpf=data['cpf'], phone=data['phone'], age=data['age'])
+        # Criar novo usuário
+        new_user = User(
+            name=data['name'],
+            email=data['email'],
+            cpf=data['cpf'],
+            phone=data['phone'],
+            age=data['age']
+        )
         db.session.add(new_user)
         db.session.commit()
 
+        addresses_summary = ""
+        # Adicionar endereços
         for addr in data['addresses']:
             if not all(k in addr for k in ('cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado')):
                 return jsonify({'message': 'Dados de endereço incompletos'}), 400
@@ -66,8 +70,13 @@ def add_user():
                 estado=addr['estado']
             )
             db.session.add(new_address)
+            addresses_summary += f"{addr['logradouro']}, {addr['numero']} - {addr['bairro']}, {addr['cidade']}, {addr['estado']} (CEP: {addr['cep']}) | "
 
+        # Armazenar addresses_summary
+        addresses_summary = addresses_summary.strip(" | ")
+        new_user.addresses_summary = addresses_summary
         db.session.commit()
+
         return jsonify({'message': 'Usuário e endereços adicionados com sucesso!'}), 201
     except Exception as e:
         db.session.rollback()
@@ -95,9 +104,11 @@ def get_users():
                 'id': user.id,
                 'name': user.name,
                 'email': user.email,
-                'cpf': user.cpf,  # Inclui CPF na resposta
+                'cpf': user.cpf,
+                'phone': user.phone,
                 'age': user.age,
-                'addresses': addresses
+                'addresses': addresses,
+                'addresses_summary': user.addresses_summary  # Inclui addresses_summary na resposta
             })
         return jsonify(users_list), 200
     except Exception as e:
@@ -114,12 +125,14 @@ def update_user(id):
         # Atualizar dados do usuário
         user.name = data.get('name', user.name)
         user.email = data.get('email', user.email)
-        user.cpf = data.get('cpf', user.cpf)  # Atualiza o CPF
+        user.cpf = data.get('cpf', user.cpf)
+        user.phone = data.get('phone', user.phone)
         user.age = data.get('age', user.age)
         db.session.commit()
 
         # Atualizar endereços
         Address.query.filter_by(user_id=id).delete()  # Remove endereços antigos
+        addresses_summary = ""
         for addr in data['addresses']:
             if not all(k in addr for k in ('cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado')):
                 return jsonify({'message': 'Dados de endereço incompletos'}), 400
@@ -134,8 +147,12 @@ def update_user(id):
                 estado=addr['estado']
             )
             db.session.add(new_address)
-
+            addresses_summary += f"{addr['logradouro']}, {addr['numero']} - {addr['bairro']}, {addr['cidade']}, {addr['estado']} (CEP: {addr['cep']}) | "
+        
+        addresses_summary = addresses_summary.strip(" | ")
+        user.addresses_summary = addresses_summary
         db.session.commit()
+
         return jsonify({'message': 'Usuário e endereços atualizados com sucesso!'}), 200
     except Exception as e:
         db.session.rollback()
