@@ -155,14 +155,14 @@ function Cadastro() {
   };
 
   return (
-    <Container maxWidth="sm" style={{ padding: '20px', backgroundColor: '#f0f4f8' }}>
+    <Container maxWidth="sm" style={{ padding: '20px' }}>
       {successMessage && <Typography style={{ color: 'green' }}>{successMessage}</Typography>}
       {errorMessage && <Typography style={{ color: 'red' }}>{errorMessage}</Typography>}
-
+  
       <Box component="form" onSubmit={handleAddUser} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         {/* Formulário de Usuário */}
-        <Box style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '8px' }}>
-          <Typography variant="h6" gutterBottom>Informações do Usuário</Typography>
+        <Box style={{ padding: '20px', borderRadius: '8px' }}>
+          <Typography variant="h6" gutterBottom>Dados Pessoais</Typography>
           <TextField
             label="Nome"
             value={name}
@@ -195,7 +195,7 @@ function Cadastro() {
               label="Telefone"
               value={phone}
               onChange={(e) => setPhone(formatPhone(e.target.value))}
-              inputProps={{ maxLength: 15 }} // Limite de caracteres para telefone
+              inputProps={{ maxLength: 15 }}
               fullWidth
               margin="normal"
               error={!!errors.phone}
@@ -212,10 +212,10 @@ function Cadastro() {
             />
           </Box>
         </Box>
-
+  
         {/* Formulário de Endereço */}
-        <Box style={{ backgroundColor: '#e0f7fa', padding: '20px', borderRadius: '8px' }}>
-          <Typography variant="h6" gutterBottom>Adicionar Endereço</Typography>
+        <Box style={{ padding: '20px', borderRadius: '8px' }}>
+          <Typography variant="h6" gutterBottom>Endereço</Typography>
           <TextField
             label="CEP"
             value={currentAddress.cep}
@@ -303,16 +303,16 @@ function Cadastro() {
               <MenuItem value="TO">TO</MenuItem>
             </TextField>
           </Box>
-
+  
           <Box display="flex" justifyContent="center" marginTop="10px">
             <Button onClick={handleAddAddress} variant="contained" color="secondary">
               Salvar Endereço
             </Button>
           </Box>
         </Box>
-
+  
         {/* Lista de Endereços Adicionados */}
-        <Box style={{ marginTop: '20px', backgroundColor: '#ffffff', padding: '20px', borderRadius: '8px' }}>
+        <Box style={{ marginTop: '20px', padding: '20px', borderRadius: '8px' }}>
           <Typography variant="h6" gutterBottom>Lista de Endereços</Typography>
           {addresses.map((address, index) => (
             <Box
@@ -326,7 +326,7 @@ function Cadastro() {
             </Box>
           ))}
         </Box>
-
+  
         {/* Botão de Cadastro */}
         <Box display="flex" justifyContent="center" marginTop="10px">
           <Button type="submit" variant="contained" color="primary">

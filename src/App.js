@@ -8,10 +8,10 @@ function NavigationBar() {
   const location = useLocation(); // Obtém a rota atual
 
   return (
-    <AppBar position="static" style={{ backgroundColor: '#1976d2' }}>
+    <AppBar position="static" elevation={0} style={{ backgroundColor: '#ffffff' }}>
       <Toolbar>
         <Box display="flex" flexDirection="column" alignItems="center" width="100%">
-          <Typography variant="h4" style={{ color: '#ffffff', fontWeight: 'bold' }}>
+          <Typography variant="h4" style={{ color: '#1976d2', fontWeight: 'bold' }}>
             Aplicação de Gerenciamento de Usuários
           </Typography>
           <Box display="flex" justifyContent="center" width="100%" position="relative">
@@ -19,7 +19,7 @@ function NavigationBar() {
               component={Link}
               to="/usuarios"
               style={{
-                color: location.pathname === '/usuarios' || location.pathname === '/' ? '#ffffff' : '#b0bec5',
+                color: location.pathname === '/usuarios' || location.pathname === '/' ? '#1976d2' : '#1976d2',
                 position: 'relative',
                 margin: '0 10px',
               }}
@@ -33,7 +33,7 @@ function NavigationBar() {
                     left: 0,
                     width: '100%',
                     height: '3px',
-                    backgroundColor: '#ffcc00',
+                    backgroundColor: '#1976d2',
                   }}
                 />
               ) : null}
@@ -42,7 +42,7 @@ function NavigationBar() {
               component={Link}
               to="/cadastro"
               style={{
-                color: location.pathname === '/cadastro' ? '#ffffff' : '#b0bec5',
+                color: location.pathname === '/cadastro' ? '#1976d2' : '#1976d2',
                 position: 'relative',
                 margin: '0 10px',
               }}
@@ -56,7 +56,7 @@ function NavigationBar() {
                     left: 0,
                     width: '100%',
                     height: '3px',
-                    backgroundColor: '#ffcc00',
+                    backgroundColor: '#1976d2',
                   }}
                 />
               ) : null}

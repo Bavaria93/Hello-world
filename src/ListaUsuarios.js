@@ -15,7 +15,7 @@ import {
   Button,
   TextField,
 } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Edit, Delete, Add, Remove } from '@mui/icons-material';
 
 const API_URL = 'http://localhost:5000/users';
 
@@ -36,6 +36,36 @@ function ListaUsuarios() {
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
     }
+  };
+
+  const formatCpf = (value) => {
+    value = value.replace(/\D/g, ''); // Remove caracteres não numéricos
+    if (value.length > 9) {
+      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    } else if (value.length > 6) {
+      value = value.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+    } else if (value.length > 3) {
+      value = value.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+    }
+    return value;
+  };
+
+  const formatPhone = (value) => {
+    value = value.replace(/\D/g, ''); // Remove caracteres não numéricos
+    if (value.length > 10) {
+      value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    } else {
+      value = value.replace(/(\d{2})(\d{4,5})(\d{0,4})/, '($1) $2-$3');
+    }
+    return value;
+  };
+
+  const formatCep = (value) => {
+    value = value.replace(/\D/g, ''); // Remove caracteres não numéricos
+    if (value.length > 5) {
+      value = value.replace(/(\d{5})(\d{1,3})/, '$1-$2');
+    }
+    return value;
   };
 
   const handleOpenEditDialog = (user) => {
@@ -82,6 +112,18 @@ function ListaUsuarios() {
     }
   };
 
+  const handleAddAddress = () => {
+    setSelectedUser({
+      ...selectedUser,
+      addresses: [...selectedUser.addresses, { cep: '', logradouro: '', numero: '', bairro: '', cidade: '', estado: '' }]
+    });
+  };
+
+  const handleRemoveAddress = (index) => {
+    const updatedAddresses = selectedUser.addresses.filter((_, i) => i !== index);
+    setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
+  };
+
   return (
     <Container maxWidth="md" style={{ padding: '20px' }}>
       <Grid container spacing={3} justifyContent="center">
@@ -97,7 +139,6 @@ function ListaUsuarios() {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                backgroundColor: '#f8f9fa',
                 border: '1px solid #dee2e6',
                 borderRadius: '10px',
               }}
@@ -116,8 +157,6 @@ function ListaUsuarios() {
                     handleOpenEditDialog(user);
                   }}
                   style={{
-                    backgroundColor: '#4caf50',
-                    color: '#fff',
                     borderRadius: '50%',
                   }}
                 >
@@ -130,8 +169,6 @@ function ListaUsuarios() {
                     handleOpenDeleteDialog(user);
                   }}
                   style={{
-                    backgroundColor: '#f44336',
-                    color: '#fff',
                     borderRadius: '50%',
                   }}
                 >
@@ -145,10 +182,9 @@ function ListaUsuarios() {
                   alignItems: 'flex-start',
                   textAlign: 'left',
                   padding: '10px',
-                  backgroundColor: '#e2e3e5',
                   borderRadius: '5px',
                   width: '100%',
-                  height: 'auto',
+                  height: '200',
                 }}
               >
                 <Typography variant="h5" style={{ fontWeight: 'bold', marginBottom: '10px' }}>
@@ -177,6 +213,7 @@ function ListaUsuarios() {
           </Grid>
         ))}
       </Grid>
+
       {/* Diálogo de Exclusão */}
       <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
         <DialogTitle>Confirmar Exclusão</DialogTitle>
@@ -194,131 +231,169 @@ function ListaUsuarios() {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Diálogo de Edição */}
-      <Dialog open={editDialogOpen} onClose={handleCloseEditDialog}>
-        <DialogTitle>Editar Usuário</DialogTitle>
-        <DialogContent>
-          {/* Campos de Informações do Usuário */}
-          <TextField
-            margin="normal"
-            label="Nome"
-            fullWidth
-            value={selectedUser?.name || ''}
-            onChange={(e) => setSelectedUser({ ...selectedUser, name: e.target.value })}
-          />
-          <TextField
-            margin="normal"
-            label="Email"
-            fullWidth
-            value={selectedUser?.email || ''}
-            onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
-          />
-          <TextField
-            margin="normal"
-            label="CPF"
-            fullWidth
-            value={selectedUser?.cpf || ''}
-            onChange={(e) => setSelectedUser({ ...selectedUser, cpf: e.target.value })}
-          />
-          <TextField
-            margin="normal"
-            label="Telefone"
-            fullWidth
-            value={selectedUser?.phone || ''}
-            onChange={(e) => setSelectedUser({ ...selectedUser, phone: e.target.value })}
-          />
-          <TextField
-            margin="normal"
-            label="Idade"
-            fullWidth
-            value={selectedUser?.age || ''}
-            onChange={(e) => setSelectedUser({ ...selectedUser, age: e.target.value })}
-          />
 
-          {/* Campos de Endereços do Usuário */}
-          <Typography variant="h6" gutterBottom>
-            Endereços
-          </Typography>
-          {selectedUser?.addresses.map((address, index) => (
-            <Box key={index} style={{ marginBottom: '15px', border: '1px solid #ddd', padding: '10px', borderRadius: '5px' }}>
-              <TextField
-                margin="normal"
-                label="CEP"
-                fullWidth
-                value={address.cep || ''}
-                onChange={(e) => {
-                  const updatedAddresses = [...selectedUser.addresses];
-                  updatedAddresses[index].cep = e.target.value;
-                  setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
-                }}
-              />
-              <TextField
-                margin="normal"
-                label="Logradouro"
-                fullWidth
-                value={address.logradouro || ''}
-                onChange={(e) => {
-                  const updatedAddresses = [...selectedUser.addresses];
-                  updatedAddresses[index].logradouro = e.target.value;
-                  setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
-                }}
-              />
-              <TextField
-                margin="normal"
-                label="Número"
-                fullWidth
-                value={address.numero || ''}
-                onChange={(e) => {
-                  const updatedAddresses = [...selectedUser.addresses];
-                  updatedAddresses[index].numero = e.target.value;
-                  setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
-                }}
-              />
-              <TextField
-                margin="normal"
-                label="Bairro"
-                fullWidth
-                value={address.bairro || ''}
-                onChange={(e) => {
-                  const updatedAddresses = [...selectedUser.addresses];
-                  updatedAddresses[index].bairro = e.target.value;
-                  setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
-                }}
-              />
-              <TextField
-                margin="normal"
-                label="Cidade"
-                fullWidth
-                value={address.cidade || ''}
-                onChange={(e) => {
-                  const updatedAddresses = [...selectedUser.addresses];
-                  updatedAddresses[index].cidade = e.target.value;
-                  setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
-                }}
-              />
-              <TextField
-                margin="normal"
-                label="Estado"
-                fullWidth
-                value={address.estado || ''}
-                onChange={(e) => {
-                  const updatedAddresses = [...selectedUser.addresses];
-                  updatedAddresses[index].estado = e.target.value;
-                  setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
-                }}
-              />
-            </Box>
-          ))}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog} color="primary">
-            Cancelar
-          </Button>
-          <Button onClick={handleUpdateUser} color="primary">
-            Salvar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Diálogo de Edição */}
+      <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} maxWidth="md" fullWidth>
+  <DialogTitle>Editar Usuário</DialogTitle>
+  <DialogContent>
+    <Box
+      component="form"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '15px',
+        padding: '20px',
+        borderRadius: '8px',
+      }}
+    >
+      {/* Informações do Usuário */}
+      <Typography variant="h6" gutterBottom>
+        Informações do Usuário
+      </Typography>
+      <TextField
+        label="Nome"
+        value={selectedUser?.name || ''}
+        onChange={(e) => setSelectedUser({ ...selectedUser, name: e.target.value })}
+        fullWidth
+        margin="normal"
+      />
+      <TextField
+        label="Email"
+        value={selectedUser?.email || ''}
+        onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
+        fullWidth
+        margin="normal"
+      />
+      <TextField
+        label="CPF"
+        value={selectedUser?.cpf || ''}
+        onChange={(e) => setSelectedUser({ ...selectedUser, cpf: formatCpf(e.target.value) })}
+        fullWidth
+        margin="normal"
+        inputProps={{ maxLength: 14 }}
+      />
+      <Box style={{ display: 'flex', gap: '15px' }}>
+        <TextField
+          label="Telefone"
+          value={selectedUser?.phone || ''}
+          onChange={(e) => setSelectedUser({ ...selectedUser, phone: formatPhone(e.target.value) })}
+          style={{ width: '120px' }} // Largura igual à do campo de número e estado
+          margin="normal"
+          inputProps={{ maxLength: 15 }}
+        />
+        <TextField
+          label="Idade"
+          type="number"
+          value={selectedUser?.age || ''}
+          onChange={(e) => setSelectedUser({ ...selectedUser, age: e.target.value })}
+          style={{ width: '120px' }} // Largura igual à do campo de número e estado
+          margin="normal"
+        />
+      </Box>
+
+      {/* Endereços do Usuário */}
+      <Typography variant="h6" gutterBottom>
+        Endereços
+      </Typography>
+      {selectedUser?.addresses.map((address, index) => (
+        <Box key={index} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+          <TextField
+            label="CEP"
+            value={address.cep || ''}
+            onChange={(e) => {
+              const updatedAddresses = [...selectedUser.addresses];
+              updatedAddresses[index].cep = formatCep(e.target.value);
+              setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
+            }}
+            fullWidth
+            margin="normal"
+            inputProps={{ maxLength: 9 }}
+          />
+          <Box style={{ display: 'flex', gap: '15px' }}>
+            <TextField
+              label="Logradouro"
+              value={address.logradouro || ''}
+              onChange={(e) => {
+                const updatedAddresses = [...selectedUser.addresses];
+                updatedAddresses[index].logradouro = e.target.value;
+                setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
+              }}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Número"
+              value={address.numero || ''}
+              onChange={(e) => {
+                const updatedAddresses = [...selectedUser.addresses];
+                updatedAddresses[index].numero = e.target.value;
+                setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
+              }}
+              style={{ width: '120px' }}
+              margin="normal"
+            />
+          </Box>
+          <TextField
+            label="Bairro"
+            value={address.bairro || ''}
+            onChange={(e) => {
+              const updatedAddresses = [...selectedUser.addresses];
+              updatedAddresses[index].bairro = e.target.value;
+              setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
+            }}
+            fullWidth
+            margin="normal"
+          />
+          <Box style={{ display: 'flex', gap: '15px' }}>
+            <TextField
+              label="Cidade"
+              value={address.cidade || ''}
+              onChange={(e) => {
+                const updatedAddresses = [...selectedUser.addresses];
+                updatedAddresses[index].cidade = e.target.value;
+                setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
+              }}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Estado"
+              value={address.estado || ''}
+              onChange={(e) => {
+                const updatedAddresses = [...selectedUser.addresses];
+                updatedAddresses[index].estado = e.target.value;
+                setSelectedUser({ ...selectedUser, addresses: updatedAddresses });
+              }}
+              style={{ width: '120px' }}
+              margin="normal"
+            />
+          </Box>
+          <Box display="flex" justifyContent="center" marginTop="10px">
+            <Button
+              onClick={() => handleRemoveAddress(index)}
+              variant="outlined"
+              color="secondary"
+              startIcon={<Remove />}
+            >
+              Remover Endereço
+            </Button>
+          </Box>
+        </Box>
+      ))}
+      <Button onClick={handleAddAddress} variant="contained" color="primary" startIcon={<Add />}>
+        Adicionar Endereço
+      </Button>
+    </Box>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={handleCloseEditDialog} color="primary">
+      Cancelar
+    </Button>
+    <Button onClick={handleUpdateUser} color="primary">
+      Salvar
+    </Button>
+  </DialogActions>
+</Dialog>
     </Container>
   );
 }
